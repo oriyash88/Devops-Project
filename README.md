@@ -5,7 +5,7 @@ MemGenerator is a React-based web application that allows users to generate and 
 ## Installation
 
 1. Clone the repository:
-git clone https://github.com/mulatmek/devops-test.git
+git clone https://github.com/oriyash88/Devops-Project.git
 
 2. Navigate to the project directory:
 cd devops-test
@@ -21,7 +21,7 @@ npm install
 npm start
 
 
-This will start the MemGenerator app on [http://localhost:3000](http://localhost:3000) in your browser.
+This will start the MemGenerator app on [http://localhost:3000] in your browser.
 
 2. Use the MemGenerator interface to select a meme template, add your custom text, and customize the appearance.
 
