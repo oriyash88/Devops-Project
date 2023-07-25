@@ -2,6 +2,9 @@
 
 MemGenerator is a React-based web application that allows users to generate and share memes easily. With MemGenerator, you can choose from a collection of popular meme templates, add your custom text, and create hilarious memes to share with your friends.
 
+# selenium
+In this project I did tests for the functionality of the application by selenium and webdriver-manager in the test_sel.py file.
+
 ## Installation
 
 1. Clone the repository:
