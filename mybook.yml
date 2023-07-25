@@ -1,0 +1,194 @@
+# ********************************* aws intance creation ********************************************
+
+- name: Create EC2 instance and deploy React app
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - group_vars/env
+  vars:
+    ansible_python_interpreter: /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
+
+  tasks:
+    - name: Create VPC
+      amazon.aws.ec2_vpc_net:
+        name: "{{ vpc_name }}"
+        cidr_block: "{{ network }}"
+        region: "{{ aws_region }}"
+        state: present
+        dns_hostnames: yes
+        dns_support: yes
+        tags:
+          Name: "{{ vpc_name }}"
+      register: vpc
+
+    - name: Create Subnet
+      amazon.aws.ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ aws_region }}"
+        cidr: "{{ subnet_cidr }}"
+        map_public: yes
+        az: "{{ subnet }}"
+        resource_tags:
+          Name: "{{ vpc_name }}"
+      register: subnet
+
+    - name: Create Internet Gateway
+      amazon.aws.ec2_vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ aws_region }}"
+        state: present
+        tags:
+          Name: "{{ vpc_name }}_igw"
+      register: igw
+
+    - name: Create Route Table
+      amazon.aws.ec2_vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ aws_region }}"
+        state: present
+        subnets:
+          - "{{ subnet.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id }}"
+        tags:
+          Name: "{{ vpc_name }}_public_rt"
+
+    - name: Create Security Group
+      ec2_group:
+        name: "{{ vpc_name }} VPC SG"
+        description: "{{ vpc_name }} VPC SG"
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ aws_region }}"
+        state: present
+        rules:
+          - proto: tcp
+            ports:
+              - 80
+              - 22
+            cidr_ip: 0.0.0.0/0
+      register: sg
+
+    - name: Create EC2 Instance
+      amazon.aws.ec2_instance:
+        image_id: "{{ aws_centos_ami }}"
+        wait: yes
+        instance_type: "{{ Server_type }}"
+        region: "{{ aws_region }}"
+        security_group: "{{ sg.group_id }}"
+        vpc_subnet_id: "{{ subnet.subnet.id }}"
+        key_name: "{{ keypair }}"
+        volumes:
+          - device_name: /dev/sda1
+            ebs:
+              volume_type: gp3
+              volume_size: "{{ server_volume_size }}"
+              delete_on_termination: true
+        tags:
+          Name: "{{ server_name }}"
+          Environment: "{{ env }}"
+        exact_count: 1
+        wait_timeout: 300
+        network:
+          assign_public_ip: yes
+        state: running
+      register: server_ec2
+
+    - name: Get IP of Instance
+      amazon.aws.ec2_instance_info:
+        filters:
+          "tag:Name": "{{ server_name }}"
+      register: ec2_data
+
+  
+    - debug: var=ec2_data.instances[0].public_ip_address
+
+    - name: Add server public IP to application host group
+      add_host:
+        hostname: "{{ ec2_data.instances[0].public_ip_address }}"
+        groups: app
+
+    - name: Wait for SSH to start using external IP
+      wait_for:
+        host: "{{ ec2_data.instances[0].public_ip_address }}"
+        port: 22
+        timeout: 300
+
+# ********************************* web server  ********************************************
+
+- name: Setup web server
+  hosts: app
+  user: centos
+  become: True
+  gather_facts: True
+  vars_files:
+    - group_vars/env
+  tasks:
+    - name: install base packages
+      yum: 
+        name: 
+          - epel-release
+        state: present
+
+    - name: install base packages
+      yum: 
+        name: 
+          - git
+          - docker
+          - docker-compose
+        state: present
+
+
+
+    - name: Copy SSH private key
+      copy:
+        src: ~/.ssh/id_ed25519
+        dest: ~/.ssh/id_ed25519
+        mode: '0600'
+
+
+    - name: Clone my website
+      git:
+        repo: "{{ repo }}"
+        dest: /opt/my_site
+        version: master
+        key_file: ~/.ssh/id_ed25519
+        accept_hostkey: yes
+        force: yes
+
+# ********************************* docker ********************************************
+
+
+    - name: Load .docker.env file
+      ansible.builtin.include_vars:
+        file: /Users/mulatmekonen/Desktop/memgen/docker.env
+
+    - name: Start Docker service
+      become: true
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Build Docker image
+      become: true
+      command: docker build -t "{{ docker_user }}/memgen:ansi" .
+      args:
+        chdir: /opt/my_site
+
+    - name: Log in to Docker Hub
+      become: true
+      command: docker login -u "{{ docker_user }}" -p "{{ docker_token }}"
+      
+
+    - name: Push Docker image to Docker Hub
+      become: true
+      command: docker push "{{ docker_user }}/memgen:ansi" 
+
+    - name: Use Docker Compose
+      become: true
+      command: docker-compose -f /opt/my_site/docker-compose.yml up -d
+      args:
+        chdir: /opt/my_site

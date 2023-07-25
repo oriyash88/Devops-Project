@@ -1,0 +1,80 @@
+
+/* Header Styles */
+header {
+  background-color: #282c34;
+  padding: 20px 0;
+  text-align: center;
+  color: #fff;
+}
+
+header h1 {
+  font-size: 32px;
+  margin: 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+.meme {
+  position: relative;
+  width: 55%;
+  margin-left: 264px;
+}
+
+.meme > img {
+  width: 100%;
+  height: auto;
+}
+
+.meme > h2 {
+  position: absolute;
+  width: 80%;
+  text-align: center;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 15px 0;
+  padding: 0 5px;
+  font-family: impact, sans-serif;
+  font-size: 2em;
+  text-transform: uppercase;
+  color: rgb(193, 188, 188);
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.meme > .bottom {
+  bottom: 0;
+}
+
+.meme > .top {
+  top: 0;
+}
+
+form {
+  padding-top: 25px;
+  text-align: center;
+}
+
+input[type="text"] {
+  width: 30%;
+  height: 40px;
+  padding: 5px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-right: 40px;
+}
+
+.gen-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #252725;
+}

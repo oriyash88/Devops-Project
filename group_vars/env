@@ -1,0 +1,16 @@
+server_name: ansi-ngnix-mu
+env: prod
+
+vpc_name: ansi
+network: 10.10.0.0/16
+env_name: 
+aws_region: eu-central-1
+subnet: eu-central-1a
+subnet_cidr: 10.10.0.0/24
+keypair: my mac
+
+aws_centos_ami: ami-0b4c74d41ee4bed78
+Server_type: t2.micro
+server_volume_size: 10
+
+repo: git@github.com:mulatmek/devops-project.git

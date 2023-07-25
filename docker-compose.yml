@@ -1,0 +1,9 @@
+version: '3.3'
+services:
+  react-app:
+    container_name: memgen
+    environment:
+      - NODE_ENV=production
+    image: mulatmek/memgen:ansi
+    ports:
+      - 80:3000
